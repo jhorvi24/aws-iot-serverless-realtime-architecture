@@ -56,7 +56,65 @@ const Auth = (() => {
       return currentUser;
     }
 
-    throw new Error('Unexpected authentication response');
+    // Handle NEW_PASSWORD_REQUIRED challenge (first login with temporary password)
+    if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+      const newPassword = prompt('Tu contraseña es temporal. Ingresa una nueva contraseña (min 8 caracteres, mayúscula, minúscula, número y símbolo):');
+      if (!newPassword) {
+        throw new Error('Debes establecer una nueva contraseña');
+      }
+      return await respondToNewPasswordChallenge(email, newPassword, data.Session);
+    }
+
+    throw new Error('Unexpected authentication response: ' + (data.ChallengeName || 'unknown'));
+  }
+
+  /**
+   * Respond to NEW_PASSWORD_REQUIRED challenge.
+   */
+  async function respondToNewPasswordChallenge(email, newPassword, session) {
+    const payload = {
+      ChallengeName: 'NEW_PASSWORD_REQUIRED',
+      ClientId: CONFIG.COGNITO_CLIENT_ID,
+      ChallengeResponses: {
+        USERNAME: email,
+        NEW_PASSWORD: newPassword
+      },
+      Session: session
+    };
+
+    const response = await fetch(
+      `https://cognito-idp.${CONFIG.COGNITO_REGION}.amazonaws.com/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-amz-json-1.1',
+          'X-Amz-Target': 'AWSCognitoIdentityProviderService.RespondToAuthChallenge'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.__type && data.__type.includes('Exception')) {
+      throw new Error(data.message || 'Error al cambiar contraseña');
+    }
+
+    if (data.AuthenticationResult) {
+      idToken = data.AuthenticationResult.IdToken;
+      accessToken = data.AuthenticationResult.AccessToken;
+      refreshToken = data.AuthenticationResult.RefreshToken;
+
+      currentUser = parseJwt(idToken);
+
+      localStorage.setItem('iot_id_token', idToken);
+      localStorage.setItem('iot_access_token', accessToken);
+      localStorage.setItem('iot_refresh_token', refreshToken);
+
+      return currentUser;
+    }
+
+    throw new Error('Error al completar el cambio de contraseña');
   }
 
   /**
