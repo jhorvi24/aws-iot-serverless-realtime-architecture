@@ -1,0 +1,13 @@
+# Copy this file to terraform.tfvars and adjust values
+
+aws_region     = "us-east-1"
+project_name   = "iot-serverless"
+environment    = "dev"
+iot_thing_name = "esp32-sensor-01"
+mqtt_topic     = "sensors/esp32/data"
+
+tags = {
+  Project   = "IoT-Serverless"
+  ManagedBy = "Terraform"
+  Owner     = "your-name"
+}

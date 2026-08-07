@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Dashboard - Sensor Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-container" id="loginScreen">
+    <div class="login-card">
+      <h1>IoT Dashboard</h1>
+      <p>Monitor de sensores en tiempo real</p>
+      
+      <div class="login-error" id="loginError">
+        <span id="loginErrorText">Error de autenticacion</span>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="usuario@ejemplo.com" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Contrasena</label>
+          <input type="password" id="password" placeholder="Tu contrasena" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-primary" id="loginBtn">Iniciar Sesion</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>IoT Dashboard</h1>
+        <div class="connection-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Desconectado</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="user-info" id="userInfo"></span>
+        <button class="btn-logout" id="logoutBtn">Cerrar Sesion</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Stats Cards -->
+      <section class="stats-grid">
+        <div class="stat-card temperature">
+          <div class="stat-card-label">Temperatura</div>
+          <div class="stat-card-value">
+            <span id="currentTemp">--</span>
+            <span class="stat-card-unit">°C</span>
+          </div>
+          <div class="stat-card-change" id="tempChange">Esperando datos...</div>
+        </div>
+
+        <div class="stat-card humidity">
+          <div class="stat-card-label">Humedad</div>
+          <div class="stat-card-value">
+            <span id="currentHumidity">--</span>
+            <span class="stat-card-unit">%</span>
+          </div>
+          <div class="stat-card-change" id="humChange">Esperando datos...</div>
+        </div>
+
+        <div class="stat-card devices">
+          <div class="stat-card-label">Dispositivos</div>
+          <div class="stat-card-value">
+            <span id="deviceCount">0</span>
+          </div>
+          <div class="stat-card-change">Activos</div>
+        </div>
+
+        <div class="stat-card uptime">
+          <div class="stat-card-label">Lecturas</div>
+          <div class="stat-card-value">
+            <span id="readingsCount">0</span>
+          </div>
+          <div class="stat-card-change" id="lastUpdate">Sin actualizar</div>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Temperatura en Tiempo Real</div>
+              <div class="chart-card-subtitle">Ultimas 50 lecturas</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="tempChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Humedad en Tiempo Real</div>
+              <div class="chart-card-subtitle">Ultimas 50 lecturas</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="humChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity Log -->
+      <section class="activity-section">
+        <div class="activity-header">
+          <span class="activity-title">Actividad Reciente</span>
+          <span class="chart-card-subtitle" id="activityCount">0 eventos</span>
+        </div>
+        <ul class="activity-list" id="activityList">
+          <li class="activity-item">
+            <div class="activity-icon temp">⏳</div>
+            <div class="activity-details">
+              <div class="activity-text">Esperando datos del sensor...</div>
+              <div class="activity-time">Conecte su ESP32</div>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="src/config.js"></script>
+  <script src="src/auth.js"></script>
+  <script src="src/websocket.js"></script>
+  <script src="src/charts.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Terraform
+terraform/.terraform/
+terraform/.build/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+terraform/.terraform.lock.hcl
+
+# Lambda builds
+lambda/**/__pycache__/
+lambda/**/*.pyc
+*.zip
+
+# Frontend
+frontend/node_modules/
+
+# Firmware
+firmware/.pio/
+firmware/.vscode/
+
+# Certificates (sensitive!)
+certs/
+*.pem
+*.pem.crt
+*.pem.key
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
