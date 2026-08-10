@@ -135,6 +135,33 @@
           </li>
         </ul>
       </section>
+
+      <!-- Historical Data & CSV Export -->
+      <section class="history-section">
+        <div class="history-header">
+          <span class="activity-title">Datos Historicos</span>
+        </div>
+        <div class="history-controls">
+          <div class="history-field">
+            <label for="historyDevice">Dispositivo</label>
+            <input type="text" id="historyDevice" value="esp32-sensor-01" placeholder="device_id">
+          </div>
+          <div class="history-field">
+            <label for="historyFrom">Desde</label>
+            <input type="datetime-local" id="historyFrom">
+          </div>
+          <div class="history-field">
+            <label for="historyTo">Hasta</label>
+            <input type="datetime-local" id="historyTo">
+          </div>
+          <div class="history-field">
+            <label for="historyLimit">Limite</label>
+            <input type="number" id="historyLimit" value="200" min="1" max="200">
+          </div>
+          <button class="btn-export" id="btnExportCsv">Descargar CSV</button>
+        </div>
+        <div class="history-status" id="historyStatus"></div>
+      </section>
     </main>
   </div>
 

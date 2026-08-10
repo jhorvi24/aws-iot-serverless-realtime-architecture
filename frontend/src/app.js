@@ -20,6 +20,13 @@ const App = (() => {
     // Bind events
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    document.getElementById('btnExportCsv').addEventListener('click', handleExportCsv);
+
+    // Set default date range (last 24h)
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    document.getElementById('historyTo').value = formatDateTimeLocal(now);
+    document.getElementById('historyFrom').value = formatDateTimeLocal(yesterday);
   }
 
   async function handleLogin(e) {
@@ -164,6 +171,99 @@ const App = (() => {
     // Update count
     const count = Math.min(readingsCount, 20);
     document.getElementById('activityCount').textContent = `${count} eventos`;
+  }
+
+  // --- CSV Export Functions ---
+
+  async function handleExportCsv() {
+    const btn = document.getElementById('btnExportCsv');
+    const status = document.getElementById('historyStatus');
+    const deviceId = document.getElementById('historyDevice').value.trim();
+    const fromDate = document.getElementById('historyFrom').value;
+    const toDate = document.getElementById('historyTo').value;
+    const limit = document.getElementById('historyLimit').value || '200';
+
+    if (!deviceId) {
+      status.textContent = 'Ingrese un ID de dispositivo';
+      status.className = 'history-status error';
+      return;
+    }
+
+    // Build query params
+    const fromTs = fromDate ? new Date(fromDate).getTime() : Date.now() - 86400000;
+    const toTs = toDate ? new Date(toDate).getTime() : Date.now();
+
+    btn.disabled = true;
+    btn.textContent = 'Descargando...';
+    status.textContent = 'Consultando datos...';
+    status.className = 'history-status';
+
+    try {
+      const token = Auth.getIdToken();
+      const url = `${CONFIG.REST_API_URL}/sensors/${deviceId}?from=${fromTs}&to=${toTs}&limit=${limit}`;
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const readings = data.readings || [];
+
+      if (readings.length === 0) {
+        status.textContent = 'No se encontraron datos en el rango seleccionado';
+        status.className = 'history-status error';
+        return;
+      }
+
+      // Generate CSV
+      const csv = generateCsv(readings, deviceId);
+      downloadCsv(csv, deviceId);
+
+      status.textContent = `${readings.length} registros exportados correctamente`;
+      status.className = 'history-status success';
+
+    } catch (error) {
+      console.error('Export error:', error);
+      status.textContent = `Error: ${error.message}`;
+      status.className = 'history-status error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Descargar CSV';
+    }
+  }
+
+  function generateCsv(readings, deviceId) {
+    const header = 'device_id,timestamp,fecha_hora,temperatura_c,humedad_pct\n';
+    const rows = readings.map(r => {
+      const date = new Date(r.timestamp).toISOString();
+      return `${deviceId},${r.timestamp},${date},${r.temperature},${r.humidity}`;
+    }).join('\n');
+
+    return header + rows;
+  }
+
+  function downloadCsv(csvContent, deviceId) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const now = new Date().toISOString().slice(0, 10);
+
+    link.href = url;
+    link.download = `sensor_data_${deviceId}_${now}.csv`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function formatDateTimeLocal(date) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   // Start app when DOM is ready

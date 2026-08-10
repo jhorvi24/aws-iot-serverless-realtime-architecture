@@ -106,7 +106,44 @@ terraform plan
 terraform apply
 ```
 
-### 2. Obtener Outputs
+### 2. Actualizar WebSocket Endpoint en Lambda IoT Processor
+
+Despues del despliegue, la Lambda `iot-processor` necesita el endpoint del WebSocket API para hacer broadcast a los clientes conectados. Este endpoint usa `https://` (no `wss://`) porque la Lambda no se conecta como cliente WebSocket, sino que llama a la **API Gateway Management API** via HTTP POST para enviar mensajes a los clientes ya conectados.
+
+```bash
+# Obtener el WebSocket API endpoint y convertir wss:// a https://
+# (formato requerido por API Gateway Management API)
+WS_ENDPOINT=$(terraform output -raw websocket_api_url | sed 's|wss://|https://|')
+
+# Obtener el nombre de la funcion Lambda IoT Processor
+FUNCTION_NAME=$(aws lambda list-functions \
+  --query "Functions[?contains(FunctionName,'iot-processor')].FunctionName" \
+  --output text)
+
+# Obtener las variables de entorno actuales y actualizar WEBSOCKET_API_ENDPOINT
+DYNAMODB_TABLE=$(terraform output -raw dynamodb_table_name 2>/dev/null || aws lambda get-function-configuration \
+  --function-name $FUNCTION_NAME \
+  --query "Environment.Variables.DYNAMODB_TABLE_NAME" --output text)
+
+CONNECTIONS_TABLE=$(aws lambda get-function-configuration \
+  --function-name $FUNCTION_NAME \
+  --query "Environment.Variables.CONNECTIONS_TABLE_NAME" --output text)
+
+# Actualizar la variable de entorno de la Lambda
+aws lambda update-function-configuration \
+  --function-name $FUNCTION_NAME \
+  --environment "Variables={DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE},CONNECTIONS_TABLE_NAME=${CONNECTIONS_TABLE},WEBSOCKET_API_ENDPOINT=${WS_ENDPOINT},ENVIRONMENT=dev}"
+```
+
+Verificar que se actualizo correctamente:
+```bash
+aws lambda get-function-configuration \
+  --function-name $FUNCTION_NAME \
+  --query "Environment.Variables.WEBSOCKET_API_ENDPOINT" \
+  --output text
+```
+
+### 3. Obtener Outputs
 
 ```bash
 # Ver todos los outputs
@@ -122,7 +159,7 @@ terraform output dashboard_url         # URL del dashboard
 terraform output s3_bucket_name        # Bucket para subir frontend
 ```
 
-### 3. Configurar el Dashboard
+### 4. Configurar el Dashboard
 
 Editar `frontend/src/config.js` con los outputs de Terraform:
 
@@ -137,7 +174,7 @@ const CONFIG = {
 };
 ```
 
-### 4. Subir Dashboard a S3
+### 5. Subir Dashboard a S3
 
 ```bash
 # Subir archivos del frontend al bucket S3
@@ -149,7 +186,7 @@ aws cloudfront create-invalidation \
   --paths "/*"
 ```
 
-### 5. Crear Usuario en Cognito
+### 6. Crear Usuario en Cognito
 
 ```bash
 # Crear usuario para acceder al dashboard
@@ -162,13 +199,20 @@ aws cognito-idp admin-create-user \
 # El usuario debera cambiar la contrasena en el primer login
 ```
 
-### 6. Configurar ESP32
+### 7. Configurar ESP32
 
-1. Obtener certificados del output de Terraform:
+1. Obtener certificados del output de Terraform (desde la carpeta `terraform/`):
 ```bash
-mkdir -p certs
-terraform output -raw iot_certificate_pem > certs/device.pem.crt
-terraform output -raw iot_private_key > certs/private.pem.key
+mkdir -p ../firmware/certs
+terraform output -raw iot_certificate_pem > ../firmware/certs/device.pem.crt
+terraform output -raw iot_private_key > ../firmware/certs/private.pem.key
+curl -o ../firmware/certs/AmazonRootCA1.pem https://www.amazontrust.com/repository/AmazonRootCA1.pem
+```
+
+Verificar que los 3 archivos existen:
+```bash
+ls ../firmware/certs/
+# device.pem.crt  private.pem.key  AmazonRootCA1.pem
 ```
 
 2. Editar `firmware/src/config.h`:
