@@ -57,6 +57,18 @@
     <main class="main-content">
       <!-- Stats Cards -->
       <section class="stats-grid">
+        <!-- Alert Banner -->
+        <div class="alert-banner" id="alertBanner" style="display:none;">
+          <div class="alert-banner-icon">⚠️</div>
+          <div class="alert-banner-content">
+            <span class="alert-banner-text" id="alertBannerText"></span>
+            <span class="alert-banner-time" id="alertBannerTime"></span>
+          </div>
+          <button class="alert-banner-close" id="alertBannerClose" aria-label="Cerrar alerta">&times;</button>
+        </div>
+      </section>
+
+      <section class="stats-grid">
         <div class="stat-card temperature">
           <div class="stat-card-label">Temperatura</div>
           <div class="stat-card-value">

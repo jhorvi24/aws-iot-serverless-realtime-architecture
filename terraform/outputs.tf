@@ -54,3 +54,8 @@ output "iot_private_key" {
   value       = module.iot_core.private_key
   sensitive   = true
 }
+
+output "sns_alerts_topic_arn" {
+  description = "SNS Topic ARN for sensor alerts"
+  value       = module.alerts.sns_topic_arn
+}

@@ -6,6 +6,13 @@ environment    = "dev"
 iot_thing_name = "esp32-sensor-01"
 mqtt_topic     = "sensors/esp32/data"
 
+# Alert configuration
+alert_email              = "tu-email@ejemplo.com"
+temperature_threshold_high = 35.0
+temperature_threshold_low  = 5.0
+humidity_threshold_high    = 85.0
+humidity_threshold_low     = 20.0
+
 tags = {
   Project   = "IoT-Serverless"
   ManagedBy = "Terraform"

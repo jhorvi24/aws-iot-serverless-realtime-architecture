@@ -610,3 +610,87 @@ body {
     align-items: stretch;
   }
 }
+
+/* --- Alert Banner --- */
+.alert-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(239, 83, 80, 0.1);
+  border: 1px solid rgba(239, 83, 80, 0.4);
+  border-radius: var(--radius);
+  animation: alertPulse 2s infinite;
+}
+
+.alert-banner.warning {
+  background: rgba(255, 167, 38, 0.1);
+  border-color: rgba(255, 167, 38, 0.4);
+}
+
+.alert-banner-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.alert-banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-banner-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+.alert-banner.warning .alert-banner-text {
+  color: #ffa726;
+}
+
+.alert-banner-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.alert-banner-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: var(--transition);
+}
+
+.alert-banner-close:hover {
+  color: var(--text-primary);
+}
+
+@keyframes alertPulse {
+  0%, 100% { border-color: rgba(239, 83, 80, 0.4); }
+  50% { border-color: rgba(239, 83, 80, 0.8); }
+}
+
+.alert-banner.warning {
+  animation-name: alertPulseWarning;
+}
+
+@keyframes alertPulseWarning {
+  0%, 100% { border-color: rgba(255, 167, 38, 0.4); }
+  50% { border-color: rgba(255, 167, 38, 0.8); }
+}
+
+/* Alert indicator on stat cards */
+.stat-card.alert-active {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 15px rgba(239, 83, 80, 0.2);
+}
+
+.stat-card.alert-active::before {
+  background: linear-gradient(90deg, var(--accent-red), var(--accent-orange)) !important;
+}

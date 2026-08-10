@@ -38,6 +38,12 @@ module "lambda" {
 
   websocket_connections_table_name = module.dynamodb.connections_table_name
   websocket_connections_table_arn  = module.dynamodb.connections_table_arn
+
+  sns_topic_arn            = module.alerts.sns_topic_arn
+  temperature_threshold_high = var.temperature_threshold_high
+  temperature_threshold_low  = var.temperature_threshold_low
+  humidity_threshold_high    = var.humidity_threshold_high
+  humidity_threshold_low     = var.humidity_threshold_low
 }
 
 # --- API Gateway Module ---
@@ -80,6 +86,19 @@ module "frontend_hosting" {
   source       = "./modules/frontend_hosting"
   project_name = var.project_name
   environment  = var.environment
+}
+
+# --- Alerts Module ---
+module "alerts" {
+  source       = "./modules/alerts"
+  project_name = var.project_name
+  environment  = var.environment
+
+  alert_email              = var.alert_email
+  temperature_threshold_high = var.temperature_threshold_high
+  temperature_threshold_low  = var.temperature_threshold_low
+  humidity_threshold_high    = var.humidity_threshold_high
+  humidity_threshold_low     = var.humidity_threshold_low
 }
 
 # --- Update Lambda with WebSocket API endpoint ---

@@ -41,6 +41,7 @@ ESP32 (DHT22)                         Dashboard (S3 + CloudFront)
 | Cognito | Autenticacion de usuarios del dashboard |
 | S3 | Hosting de archivos estaticos del dashboard |
 | CloudFront | CDN con HTTPS para el dashboard |
+| SNS | Notificaciones por email de alertas de umbrales |
 
 ## Estructura del Proyecto
 
@@ -58,6 +59,7 @@ ESP32 (DHT22)                         Dashboard (S3 + CloudFront)
 │       ├── lambda/           # Funciones Lambda + IAM roles
 │       ├── api_gateway/      # REST API + WebSocket API
 │       ├── cognito/          # User Pool + App Client
+│       ├── alerts/           # SNS Topic + Suscripcion email
 │       └── frontend_hosting/ # S3 + CloudFront
 ├── lambda/                    # Codigo de las funciones Lambda
 │   ├── iot_processor/        # Procesa datos del IoT Core
@@ -132,7 +134,7 @@ CONNECTIONS_TABLE=$(aws lambda get-function-configuration \
 # Actualizar la variable de entorno de la Lambda
 aws lambda update-function-configuration \
   --function-name $FUNCTION_NAME \
-  --environment "Variables={DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE},CONNECTIONS_TABLE_NAME=${CONNECTIONS_TABLE},WEBSOCKET_API_ENDPOINT=${WS_ENDPOINT},ENVIRONMENT=dev}"
+  --environment "Variables={DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE},CONNECTIONS_TABLE_NAME=${CONNECTIONS_TABLE},WEBSOCKET_API_ENDPOINT=${WS_ENDPOINT},SNS_TOPIC_ARN=$(terraform output -raw sns_alerts_topic_arn),TEMP_THRESHOLD_HIGH=35.0,TEMP_THRESHOLD_LOW=5.0,HUMIDITY_THRESHOLD_HIGH=85.0,HUMIDITY_THRESHOLD_LOW=20.0,ENVIRONMENT=dev}"
 ```
 
 Verificar que se actualizo correctamente:
@@ -247,6 +249,87 @@ GND   ────────  GND (Pin 4)
 
 Todas las peticiones requieren header `Authorization: Bearer <id_token>`.
 
+## Sistema de Alertas
+
+El sistema evalua cada lectura del sensor contra umbrales configurables. Si se supera un umbral:
+1. Se envia una notificacion por email via SNS
+2. El dashboard muestra un banner de alerta visual con animacion
+3. Las tarjetas de las metricas afectadas se resaltan en rojo
+4. Se envia una notificacion del navegador (si el usuario lo permite)
+
+### Configuracion de Umbrales
+
+Los umbrales se configuran en `terraform.tfvars`:
+
+```hcl
+# Email para recibir alertas (obligatorio)
+alert_email = "tu-email@ejemplo.com"
+
+# Umbrales de temperatura (Celsius)
+temperature_threshold_high = 35.0   # Alerta si supera este valor
+temperature_threshold_low  = 5.0    # Alerta si baja de este valor
+
+# Umbrales de humedad (%)
+humidity_threshold_high = 85.0      # Alerta si supera este valor
+humidity_threshold_low  = 20.0      # Alerta si baja de este valor
+```
+
+### Confirmar Suscripcion SNS
+
+Despues del primer `terraform apply` con la variable `alert_email` configurada:
+
+1. Revisa tu bandeja de entrada (y spam) buscando un email de "AWS Notifications"
+2. Haz clic en **"Confirm subscription"** en el email
+3. Solo despues de confirmar recibiras las alertas
+
+### Tipos de Alerta
+
+| Tipo | Severidad | Condicion |
+|------|-----------|-----------|
+| temperature_high | Critica | Temperatura > umbral alto |
+| temperature_low | Advertencia | Temperatura < umbral bajo |
+| humidity_high | Advertencia | Humedad > umbral alto |
+| humidity_low | Advertencia | Humedad < umbral bajo |
+
+### Ejemplo de Notificacion Email
+
+```
+=== ALERTA DE SENSOR IoT ===
+
+Dispositivo: esp32-sensor-01
+Fecha/Hora: 2026-08-03 15:30:00 UTC
+
+Valores actuales:
+  - Temperatura: 37.5°C
+  - Humedad: 62.3%
+
+Alertas detectadas:
+  - Temperatura alta: 37.5°C (umbral: 35.0°C)
+
+Umbrales configurados:
+  - Temperatura: 5.0°C - 35.0°C
+  - Humedad: 20.0% - 85.0%
+```
+
+### Modificar Umbrales sin Redesplegar
+
+Si quieres cambiar los umbrales sin hacer `terraform apply`, puedes actualizar directamente la Lambda:
+
+```bash
+FUNCTION_NAME=$(aws lambda list-functions \
+  --query "Functions[?contains(FunctionName,'iot-processor')].FunctionName" \
+  --output text)
+
+# Obtener variables actuales y actualizar solo los umbrales
+aws lambda update-function-configuration \
+  --function-name $FUNCTION_NAME \
+  --environment "Variables=$(aws lambda get-function-configuration \
+    --function-name $FUNCTION_NAME \
+    --query 'Environment.Variables' --output json | \
+    jq '.TEMP_THRESHOLD_HIGH="40.0" | .TEMP_THRESHOLD_LOW="2.0"' | \
+    jq -r 'to_entries | map("\(.key)=\(.value)") | join(",") | "{" + . + "}"')"
+```
+
 ## Limpieza
 
 ```bash
@@ -263,5 +346,6 @@ Con uso moderado (1 ESP32, lecturas cada 10s):
 - **API Gateway**: ~$0.01/mes
 - **S3 + CloudFront**: ~$0.05/mes
 - **Cognito**: $0.00 (primeros 50,000 usuarios gratis)
+- **SNS**: ~$0.00 (primeras 1,000 notificaciones email gratis)
 
 **Total estimado: < $1 USD/mes**

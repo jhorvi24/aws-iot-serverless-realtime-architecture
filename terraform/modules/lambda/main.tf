@@ -81,6 +81,13 @@ resource "aws_iam_role_policy" "iot_processor_policy" {
       {
         Effect = "Allow"
         Action = [
+          "sns:Publish"
+        ]
+        Resource = var.sns_topic_arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
@@ -213,10 +220,15 @@ resource "aws_lambda_function" "iot_processor" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME     = var.dynamodb_table_name
-      CONNECTIONS_TABLE_NAME  = var.websocket_connections_table_name
-      WEBSOCKET_API_ENDPOINT  = ""  # Updated after API Gateway creation
-      ENVIRONMENT             = var.environment
+      DYNAMODB_TABLE_NAME        = var.dynamodb_table_name
+      CONNECTIONS_TABLE_NAME     = var.websocket_connections_table_name
+      WEBSOCKET_API_ENDPOINT     = ""  # Updated after API Gateway creation
+      SNS_TOPIC_ARN              = var.sns_topic_arn
+      TEMP_THRESHOLD_HIGH        = tostring(var.temperature_threshold_high)
+      TEMP_THRESHOLD_LOW         = tostring(var.temperature_threshold_low)
+      HUMIDITY_THRESHOLD_HIGH    = tostring(var.humidity_threshold_high)
+      HUMIDITY_THRESHOLD_LOW     = tostring(var.humidity_threshold_low)
+      ENVIRONMENT                = var.environment
     }
   }
 

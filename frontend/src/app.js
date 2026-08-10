@@ -21,6 +21,9 @@ const App = (() => {
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('btnExportCsv').addEventListener('click', handleExportCsv);
+    document.getElementById('alertBannerClose').addEventListener('click', () => {
+      document.getElementById('alertBanner').style.display = 'none';
+    });
 
     // Set default date range (last 24h)
     const now = new Date();
@@ -100,7 +103,7 @@ const App = (() => {
   }
 
   function handleSensorData(data) {
-    const { device_id, temperature, humidity, timestamp } = data;
+    const { device_id, temperature, humidity, timestamp, alerts } = data;
 
     // Update stat cards
     document.getElementById('currentTemp').textContent = temperature.toFixed(1);
@@ -141,6 +144,9 @@ const App = (() => {
 
     // Add activity log entry
     addActivityEntry(device_id, temperature, humidity, timestamp);
+
+    // Handle alerts
+    handleAlerts(alerts, device_id, temperature, humidity);
   }
 
   function addActivityEntry(deviceId, temp, hum, timestamp) {
@@ -171,6 +177,49 @@ const App = (() => {
     // Update count
     const count = Math.min(readingsCount, 20);
     document.getElementById('activityCount').textContent = `${count} eventos`;
+  }
+
+  // --- Alert Handling ---
+
+  function handleAlerts(alerts, deviceId, temperature, humidity) {
+    const banner = document.getElementById('alertBanner');
+    const tempCard = document.querySelector('.stat-card.temperature');
+    const humCard = document.querySelector('.stat-card.humidity');
+
+    // Clear previous alert states
+    tempCard.classList.remove('alert-active');
+    humCard.classList.remove('alert-active');
+
+    if (!alerts || alerts.length === 0) {
+      return;
+    }
+
+    // Show alert banner
+    const isCritical = alerts.some(a => a.severity === 'critical');
+    const alertMessages = alerts.map(a => a.message).join(' | ');
+
+    banner.style.display = 'flex';
+    banner.className = isCritical ? 'alert-banner' : 'alert-banner warning';
+    document.getElementById('alertBannerText').textContent = alertMessages;
+    document.getElementById('alertBannerTime').textContent = 
+      `${deviceId} - ${new Date().toLocaleTimeString('es-ES')}`;
+
+    // Highlight affected stat cards
+    const hasTemperatureAlert = alerts.some(a => a.type.startsWith('temperature'));
+    const hasHumidityAlert = alerts.some(a => a.type.startsWith('humidity'));
+
+    if (hasTemperatureAlert) tempCard.classList.add('alert-active');
+    if (hasHumidityAlert) humCard.classList.add('alert-active');
+
+    // Play alert sound (optional browser notification)
+    if (Notification.permission === 'granted') {
+      new Notification(`Alerta IoT - ${deviceId}`, {
+        body: alertMessages,
+        icon: '🚨'
+      });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
   }
 
   // --- CSV Export Functions ---

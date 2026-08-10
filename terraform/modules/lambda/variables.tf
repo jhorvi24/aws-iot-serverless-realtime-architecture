@@ -37,3 +37,28 @@ variable "websocket_connections_table_arn" {
   description = "DynamoDB WebSocket connections table ARN"
   type        = string
 }
+
+variable "sns_topic_arn" {
+  description = "SNS Topic ARN for sensor alerts"
+  type        = string
+}
+
+variable "temperature_threshold_high" {
+  description = "Temperature upper threshold (Celsius)"
+  type        = number
+}
+
+variable "temperature_threshold_low" {
+  description = "Temperature lower threshold (Celsius)"
+  type        = number
+}
+
+variable "humidity_threshold_high" {
+  description = "Humidity upper threshold (%)"
+  type        = number
+}
+
+variable "humidity_threshold_low" {
+  description = "Humidity lower threshold (%)"
+  type        = number
+}

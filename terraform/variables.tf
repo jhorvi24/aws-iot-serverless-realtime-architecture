@@ -49,3 +49,35 @@ variable "tags" {
     ManagedBy   = "Terraform"
   }
 }
+
+# --- Alert Configuration ---
+
+variable "alert_email" {
+  description = "Email address to receive sensor alert notifications"
+  type        = string
+  default     = ""
+}
+
+variable "temperature_threshold_high" {
+  description = "Temperature upper threshold (Celsius) - triggers alert when exceeded"
+  type        = number
+  default     = 35.0
+}
+
+variable "temperature_threshold_low" {
+  description = "Temperature lower threshold (Celsius) - triggers alert when below"
+  type        = number
+  default     = 5.0
+}
+
+variable "humidity_threshold_high" {
+  description = "Humidity upper threshold (%) - triggers alert when exceeded"
+  type        = number
+  default     = 85.0
+}
+
+variable "humidity_threshold_low" {
+  description = "Humidity lower threshold (%) - triggers alert when below"
+  type        = number
+  default     = 20.0
+}
