@@ -5,28 +5,46 @@ Arquitectura completamente serverless para IoT que recibe datos de temperatura y
 ## Arquitectura
 
 ```
-ESP32 (DHT22)                         Dashboard (S3 + CloudFront)
-     │                                        ▲
-     │ MQTT/TLS                               │ HTTPS
-     ▼                                        │
-┌──────────────┐    IoT Rule    ┌──────────────────┐
-│ AWS IoT Core │───────────────▶│     Lambda       │
-│ (MQTT Broker)│                │ (IoT Processor)  │
-└──────────────┘                └───────┬──┬───────┘
-                                        │  │
-                               Store    │  │  Broadcast
-                                        ▼  ▼
-                              ┌──────────┐  ┌───────────────┐
-                              │ DynamoDB │  │ API Gateway   │
-                              │(Sensors) │  │ (WebSocket)   │
-                              └────┬─────┘  └───────────────┘
-                                   │
-                                   │ Query
-                                   ▼
-                            ┌───────────────┐
-                            │ API Gateway   │◀── Cognito Auth
-                            │   (REST)      │
-                            └───────────────┘
+                                         ┌─────────── AWS Cloud ───────────┐
+                                         │                                 │
+                                         │         ┌───────────┐           │
+                                         │    ┌───▶│  DynamoDB  │◀──┐      │
+                                         │    │    │(sensor-data)│   │      │
+                                         │    │    └────────────┘   │      │
+                                         │    │Store            Query│      │
+┌───────────┐   MQTT/TLS    ┌──────────┐ │ ┌──┴───────────┐  ┌─────┴────┐ │
+│  ESP32    │──────────────▶│ IoT Core │───▶│   Lambda     │  │  Lambda  │ │
+│  DHT22    │               │  (MQTT)  │ │ │iot-processor │  │api-handler│ │
+└───────────┘               └──────────┘ │ └──┬────┬──────┘  └─────┬────┘ │
+                                         │    │    │                │      │
+                                         │    │    │         ┌──────┴────┐ │
+                                         │    │    │         │ API GW    │ │
+                                         │    │    │         │  (REST)   │ │
+                                         │    ▼    ▼         └──────┬────┘ │
+                                         │ ┌─────┐ ┌──────────┐    │      │
+                                         │ │ SNS │ │  API GW   │   │      │
+                                         │ │email│ │(WebSocket)│   │      │
+                                         │ └──┬──┘ └─────┬────┘    │      │
+                                         │    │          │         │      │
+                                         │    │          │    ┌────┴────┐ │
+                                         │    │          │    │ Cognito │ │
+                                         │    │          │    │ (Auth)  │ │
+                                         │    │          │    └─────────┘ │
+                                         │    │          │                │
+                                         │    │    ┌─────┴──────┐        │
+                                         │    │    │ CloudFront  │        │
+                                         │    │    │  + S3       │        │
+                                         │    │    └─────┬──────┘        │
+                                         │    │          │               │
+                                         └────┼──────────┼───────────────┘
+                                              │          │
+                                              ▼          ▼
+                                         ┌─────────────────────┐
+                                         │   Usuario/Browser   │
+                                         │  - Dashboard        │
+                                         │  - Alertas email    │
+                                         │  - CSV export       │
+                                         └─────────────────────┘
 ```
 
 ## Servicios AWS
@@ -92,6 +110,32 @@ ESP32 (DHT22)                         Dashboard (S3 + CloudFront)
 - Cuenta AWS con permisos de administrador
 
 ## Despliegue
+
+### 0. Configurar AWS Profile
+
+Antes de desplegar, debes crear un perfil de AWS CLI con tus credenciales:
+
+```bash
+aws configure --profile iot-serverless
+```
+
+Esto te pedira:
+- AWS Access Key ID
+- AWS Secret Access Key
+- Default region (us-east-1)
+- Default output format (json)
+
+Luego, edita el archivo `terraform/variables.tf` y coloca el nombre de tu profile en la variable `aws_profile`:
+
+```hcl
+variable "aws_profile" {
+  description = "AWS Profile"
+  type        = string
+  default     = "iot-serverless"  # <-- nombre del profile que creaste
+}
+```
+
+Este perfil es usado por el provider de Terraform para autenticarse contra AWS.
 
 ### 1. Infraestructura (Terraform)
 

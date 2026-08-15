@@ -222,7 +222,7 @@ resource "aws_lambda_function" "iot_processor" {
     variables = {
       DYNAMODB_TABLE_NAME        = var.dynamodb_table_name
       CONNECTIONS_TABLE_NAME     = var.websocket_connections_table_name
-      WEBSOCKET_API_ENDPOINT     = ""  # Updated after API Gateway creation
+      WEBSOCKET_API_ENDPOINT     = var.websocket_api_endpoint
       SNS_TOPIC_ARN              = var.sns_topic_arn
       TEMP_THRESHOLD_HIGH        = tostring(var.temperature_threshold_high)
       TEMP_THRESHOLD_LOW         = tostring(var.temperature_threshold_low)

@@ -38,6 +38,11 @@ variable "websocket_connections_table_arn" {
   type        = string
 }
 
+variable "websocket_api_endpoint" {
+  description = "WebSocket API endpoint (https://) for API Gateway Management API"
+  type        = string
+}
+
 variable "sns_topic_arn" {
   description = "SNS Topic ARN for sensor alerts"
   type        = string

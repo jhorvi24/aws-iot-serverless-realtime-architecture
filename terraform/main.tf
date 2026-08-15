@@ -39,7 +39,9 @@ module "lambda" {
   websocket_connections_table_name = module.dynamodb.connections_table_name
   websocket_connections_table_arn  = module.dynamodb.connections_table_arn
 
-  sns_topic_arn            = module.alerts.sns_topic_arn
+  websocket_api_endpoint = ""  # Se actualiza manualmente despues del deploy (ver paso 2 del README)
+
+  sns_topic_arn              = module.alerts.sns_topic_arn
   temperature_threshold_high = var.temperature_threshold_high
   temperature_threshold_low  = var.temperature_threshold_low
   humidity_threshold_high    = var.humidity_threshold_high
@@ -101,9 +103,4 @@ module "alerts" {
   humidity_threshold_low     = var.humidity_threshold_low
 }
 
-# --- Update Lambda with WebSocket API endpoint ---
-resource "aws_lambda_function_event_invoke_config" "iot_processor_config" {
-  function_name = module.lambda.iot_processor_function_name
 
-  depends_on = [module.api_gateway]
-}
