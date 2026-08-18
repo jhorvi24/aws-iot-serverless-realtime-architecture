@@ -93,11 +93,9 @@ Arquitectura completamente serverless para IoT que recibe datos de temperatura y
 │       ├── app.js            # Logica principal
 │       └── styles/
 │           └── main.css      # Estilos dark theme
-├── firmware/                  # Codigo ESP32
-│   ├── platformio.ini        # Configuracion PlatformIO
-│   └── src/
-│       ├── main.cpp          # Programa principal
-│       └── config.h          # Configuracion WiFi/AWS/Certs
+├── firmware/                  # Codigo ESP32 (Arduino IDE)
+│   ├── esp32-sensor-data.ino # Programa principal
+│   └── config.h              # Configuracion WiFi/AWS/Certs
 └── architecture.md           # Diagrama detallado
 ```
 
@@ -105,7 +103,7 @@ Arquitectura completamente serverless para IoT que recibe datos de temperatura y
 
 - [Terraform](https://terraform.io) >= 1.5.0
 - [AWS CLI](https://aws.amazon.com/cli/) configurado
-- [PlatformIO](https://platformio.org/) para firmware ESP32
+- [Arduino IDE](https://www.arduino.cc/en/software) con soporte para ESP32
 - ESP32 DevKit + Sensor DHT22
 - Cuenta AWS con permisos de administrador
 
@@ -261,17 +259,20 @@ ls ../firmware/certs/
 # device.pem.crt  private.pem.key  AmazonRootCA1.pem
 ```
 
-2. Editar `firmware/src/config.h`:
+2. Editar `firmware/config.h`:
    - Configurar SSID y password de WiFi
    - Pegar el endpoint IoT (`terraform output iot_endpoint`)
    - Pegar los certificados obtenidos
 
-3. Compilar y subir con PlatformIO:
-```bash
-cd firmware
-pio run --target upload
-pio device monitor  # Ver logs del ESP32
-```
+3. Abrir `firmware/esp32-sensor-data.ino` en Arduino IDE:
+   - Instalar las librerias necesarias desde el Library Manager:
+     - `DHT sensor library` (Adafruit)
+     - `ArduinoJson` (Benoit Blanchon)
+     - `PubSubClient` (Nick O'Leary)
+   - Seleccionar la placa: Tools → Board → ESP32 Dev Module
+   - Seleccionar el puerto COM correspondiente
+   - Compilar y subir (Upload)
+   - Abrir Serial Monitor (115200 baud) para ver los logs
 
 ## Conexiones de Hardware (ESP32 + DHT22)
 

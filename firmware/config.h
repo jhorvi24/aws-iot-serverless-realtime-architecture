@@ -24,13 +24,14 @@
 
 // --- Sensor Configuration ---
 #define DHT_PIN 4           // GPIO pin connected to DHT22 data pin
-#define DHT_TYPE DHT22      // DHT22 (AM2302)
+#define DHT_TYPE DHT22      // DHT22-DHT11
 #define READ_INTERVAL 10000 // Read sensor every 10 seconds (ms)
 
 // --- Certificates ---
 // Replace with your device certificate from Terraform output
 // Use: terraform output -raw iot_certificate_pem
 
+//Amazon Root CA1
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
